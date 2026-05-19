@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mocha & Co — Coffee House</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --espresso: #0f0603;
+    --roast: #1c0d07;
+    --dark-brown: #2a1208;
+    --amber: #e8943a;
+    --gold: #f5c842;
+    --cream: #fdf3e3;
+    --warm-white: #fff9f2;
+    --glass-bg: rgba(255, 235, 200, 0.06);
+    --glass-border: rgba(255, 210, 140, 0.18);
+    --glass-hover: rgba(255, 235, 200, 0.11);
+    --muted: rgba(253, 243, 227, 0.55);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--espresso);
+    color: var(--cream);
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  /* ── Background ── */
+  .bg-wrap {
+    position: fixed; inset: 0; z-index: 0; overflow: hidden;
+    background: radial-gradient(ellipse 80% 60% at 20% 10%, #3b1a09 0%, #1c0a04 40%, #0f0603 100%);
+  }
+  .bg-orb {
+    position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.35;
+    animation: drift 12s ease-in-out infinite alternate;
+  }
+  .orb1 { width: 500px; height: 500px; background: #7a3410; top: -100px; left: -100px; animation-delay: 0s; }
+  .orb2 { width: 380px; height: 380px; background: #c4621a; bottom: 10%; right: -80px; animation-delay: -4s; }
+  .orb3 { width: 280px; height: 280px; background: #e8943a; top: 40%; left: 45%; animation-delay: -8s; }
+  @keyframes drift { from { transform: translate(0,0) scale(1); } to { transform: translate(30px, 20px) scale(1.08); } }
+
+  /* Noise texture overlay */
+  .bg-wrap::after {
+    content: ''; position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    opacity: 0.4; pointer-events: none;
+  }
+
+  /* ── Layout ── */
+  .content { position: relative; z-index: 1; }
+
+  /* ── Glass utility ── */
+  .glass {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border-radius: 20px;
+    transition: background 0.3s, border 0.3s, transform 0.3s;
+  }
+  .glass:hover { background: var(--glass-hover); border-color: rgba(232, 148, 58, 0.35); }
+
+  /* ── Navbar ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: 1.2rem 4rem;
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(15, 6, 3, 0.5);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-bottom: 1px solid var(--glass-border);
+    animation: slideDown 0.7s ease both;
+  }
+  @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+  .nav-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem; font-weight: 700;
+    color: var(--cream); letter-spacing: 0.02em;
+  }
+  .nav-logo span { color: var(--amber); }
+
+  .nav-links { display: flex; gap: 2.5rem; list-style: none; }
+  .nav-links a {
+    color: var(--muted); text-decoration: none; font-size: 0.9rem;
+    font-weight: 400; letter-spacing: 0.04em; transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--cream); }
+
+  .nav-cta {
+    background: var(--amber); color: var(--espresso);
+    border: none; padding: 0.65rem 1.6rem; border-radius: 50px;
+    font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 500;
+    cursor: pointer; letter-spacing: 0.03em; transition: background 0.2s, transform 0.2s;
+  }
+  .nav-cta:hover { background: var(--gold); transform: translateY(-1px); }
+
+  /* ── Hero ── */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    padding: 8rem 2rem 4rem;
+  }
+
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: rgba(232, 148, 58, 0.12); border: 1px solid rgba(232, 148, 58, 0.3);
+    padding: 0.45rem 1.2rem; border-radius: 50px;
+    font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--amber); margin-bottom: 2rem;
+    animation: fadeUp 0.8s 0.2s ease both;
+  }
+  .hero-badge::before { content: '☕'; font-size: 0.9rem; }
+
+  .hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(3rem, 7vw, 6rem);
+    font-weight: 700; line-height: 1.1;
+    color: var(--cream);
+    animation: fadeUp 0.8s 0.35s ease both;
+    max-width: 820px;
+  }
+  .hero h1 em { font-style: italic; color: var(--amber); }
+
+  .hero-sub {
+    font-size: 1.1rem; color: var(--muted); font-weight: 300;
+    max-width: 500px; line-height: 1.7; margin-top: 1.5rem;
+    animation: fadeUp 0.8s 0.5s ease both;
+  }
+
+  .hero-actions {
+    display: flex; gap: 1rem; margin-top: 2.5rem;
+    animation: fadeUp 0.8s 0.65s ease both;
+  }
+
+  .btn-primary {
+    background: var(--amber); color: var(--espresso);
+    border: none; padding: 0.9rem 2.2rem; border-radius: 50px;
+    font-family: 'DM Sans', sans-serif; font-size: 1rem; font-weight: 500;
+    cursor: pointer; transition: background 0.2s, transform 0.2s; letter-spacing: 0.02em;
+    text-decoration: none;
+  }
+  .btn-primary:hover { background: var(--gold); transform: translateY(-2px); }
+
+  .btn-secondary {
+    background: transparent; color: var(--cream);
+    border: 1px solid var(--glass-border); padding: 0.9rem 2.2rem; border-radius: 50px;
+    font-family: 'DM Sans', sans-serif; font-size: 1rem; font-weight: 400;
+    cursor: pointer; transition: background 0.2s, border 0.2s, transform 0.2s;
+    text-decoration: none;
+    backdrop-filter: blur(10px);
+  }
+  .btn-secondary:hover { background: var(--glass-hover); border-color: var(--amber); transform: translateY(-2px); }
+
+  .hero-scroll {
+    margin-top: 4rem;
+    animation: fadeUp 0.8s 0.8s ease both;
+    display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+  }
+  .hero-scroll span { font-size: 0.75rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+  .scroll-line {
+    width: 1px; height: 48px; background: linear-gradient(to bottom, var(--amber), transparent);
+    animation: scrollPulse 2s ease-in-out infinite;
+  }
+  @keyframes scrollPulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ── Section layout ── */
+  section { padding: 6rem 4rem; }
+  .section-label {
+    font-size: 0.78rem; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--amber); margin-bottom: 0.8rem; font-weight: 500;
+  }
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 700; color: var(--cream); line-height: 1.2;
+  }
+  .section-title em { font-style: italic; color: var(--amber); }
+
+  /* ── Stats ── */
+  .stats {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem; max-width: 900px; margin: 5rem auto 0;
+  }
+  .stat-card {
+    padding: 2rem; text-align: center;
+  }
+  .stat-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 3.5rem; font-weight: 700; color: var(--amber);
+    line-height: 1;
+  }
+  .stat-label { font-size: 0.85rem; color: var(--muted); margin-top: 0.5rem; letter-spacing: 0.05em; }
+
+  /* ── About ── */
+  .about-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 4rem; align-items: center; max-width: 1100px; margin: 0 auto;
+  }
+  .about-text p { color: var(--muted); line-height: 1.8; margin-top: 1.5rem; font-weight: 300; }
+
+  .about-visual {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  .about-card {
+    padding: 1.8rem 1.5rem; border-radius: 16px;
+    display: flex; flex-direction: column; gap: 0.7rem;
+  }
+  .about-card:nth-child(1) { margin-top: 2rem; }
+  .about-card:nth-child(4) { margin-top: -2rem; }
+  .about-icon { font-size: 1.8rem; }
+  .about-card h4 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem; font-weight: 600; color: var(--cream);
+  }
+  .about-card p { font-size: 0.82rem; color: var(--muted); line-height: 1.6; }
+
+  /* ── Menu ── */
+  .menu-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem; max-width: 1200px; margin: 3rem auto 0;
+  }
+  .menu-card { padding: 2rem 1.5rem; border-radius: 20px; cursor: default; }
+  .menu-card:hover { transform: translateY(-6px); }
+  .menu-emoji { font-size: 2.4rem; margin-bottom: 1rem; display: block; }
+  .menu-card h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.15rem; font-weight: 600; color: var(--cream); margin-bottom: 0.5rem;
+  }
+  .menu-card p { font-size: 0.82rem; color: var(--muted); line-height: 1.6; margin-bottom: 1.2rem; }
+  .menu-price { color: var(--amber); font-weight: 500; font-size: 1rem; }
+  .menu-tag {
+    display: inline-block; background: rgba(232, 148, 58, 0.12);
+    border: 1px solid rgba(232, 148, 58, 0.25);
+    color: var(--amber); font-size: 0.7rem; padding: 0.25rem 0.7rem;
+    border-radius: 20px; margin-bottom: 0.8rem; letter-spacing: 0.05em;
+  }
+
+  /* ── Testimonials ── */
+  .testi-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem; max-width: 1100px; margin: 3rem auto 0;
+  }
+  .testi-card { padding: 2rem; }
+  .testi-stars { color: var(--amber); font-size: 0.9rem; letter-spacing: 0.1em; margin-bottom: 1rem; }
+  .testi-quote {
+    font-family: 'Playfair Display', serif;
+    font-style: italic; font-size: 1rem; color: var(--cream);
+    line-height: 1.7; margin-bottom: 1.5rem;
+  }
+  .testi-author { display: flex; align-items: center; gap: 0.8rem; }
+  .testi-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: rgba(232, 148, 58, 0.2); border: 1px solid var(--glass-border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem; font-weight: 500; color: var(--amber);
+  }
+  .testi-name { font-size: 0.85rem; font-weight: 500; color: var(--cream); }
+  .testi-role { font-size: 0.75rem; color: var(--muted); }
+
+  /* ── CTA ── */
+  .cta-box {
+    max-width: 800px; margin: 0 auto;
+    padding: 4rem 3rem; text-align: center;
+  }
+  .cta-box .section-title { margin-bottom: 1rem; }
+  .cta-box p { color: var(--muted); line-height: 1.7; margin-bottom: 2rem; font-weight: 300; }
+  .cta-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+
+  /* ── Hours ── */
+  .hours-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem; max-width: 900px; margin: 3rem auto 0;
+  }
+  .hour-card { padding: 1.8rem; text-align: center; }
+  .hour-day { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--amber); margin-bottom: 0.5rem; }
+  .hour-time {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem; font-weight: 600; color: var(--cream);
+  }
+
+  /* ── Footer ── */
+  footer {
+    padding: 3rem 4rem;
+    border-top: 1px solid var(--glass-border);
+    display: flex; align-items: center; justify-content: space-between;
+    color: var(--muted); font-size: 0.85rem;
+  }
+  .footer-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem; font-weight: 700; color: var(--cream);
+  }
+  .footer-logo span { color: var(--amber); }
+  .footer-links { display: flex; gap: 2rem; }
+  .footer-links a { color: var(--muted); text-decoration: none; transition: color 0.2s; }
+  .footer-links a:hover { color: var(--cream); }
+
+  /* ── Divider ── */
+  .divider {
+    height: 1px; background: linear-gradient(to right, transparent, var(--glass-border), transparent);
+    max-width: 1200px; margin: 0 auto;
+  }
+
+  /* ── Scroll reveal ── */
+  .reveal {
+    opacity: 0; transform: translateY(30px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  /* ── Responsive ── */
+  @media (max-width: 900px) {
+    nav { padding: 1rem 2rem; }
+    .nav-links { display: none; }
+    section { padding: 4rem 2rem; }
+    .about-grid { grid-template-columns: 1fr; gap: 2rem; }
+    .menu-grid { grid-template-columns: repeat(2, 1fr); }
+    .testi-grid { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: 1fr; max-width: 320px; }
+    .hours-grid { grid-template-columns: 1fr; }
+    footer { flex-direction: column; gap: 1.5rem; text-align: center; }
+    .footer-links { flex-wrap: wrap; justify-content: center; }
+  }
+  @media (max-width: 600px) {
+    .menu-grid { grid-template-columns: 1fr; }
+    .hero-actions { flex-direction: column; align-items: center; }
+    .cta-actions { flex-direction: column; align-items: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Background -->
+<div class="bg-wrap">
+  <div class="bg-orb orb1"></div>
+  <div class="bg-orb orb2"></div>
+  <div class="bg-orb orb3"></div>
+</div>
+
+<div class="content">
+
+  <!-- Navbar -->
+  <nav>
+    <div class="nav-logo">Mocha <span>&</span> Co</div>
+    <ul class="nav-links">
+      <li><a href="#menu">Menu</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="#hours">Hours</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+    <button class="nav-cta">Reserve a Seat</button>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-badge">Specialty Coffee Since 2019</div>
+    <h1>Where Every Cup<br><em>Tells a Story</em></h1>
+    <p class="hero-sub">Handcrafted espresso drinks, single-origin beans, and a warm corner of the world made just for you.</p>
+    <div class="hero-actions">
+      <a href="#menu" class="btn-primary">Explore Our Menu</a>
+      <a href="#about" class="btn-secondary">Our Story</a>
+    </div>
+    <div class="hero-scroll">
+      <div class="scroll-line"></div>
+      <span>Scroll</span>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section style="padding-top: 0;">
+    <div class="stats">
+      <div class="stat-card glass reveal">
+        <div class="stat-num">12+</div>
+        <div class="stat-label">Signature Blends</div>
+      </div>
+      <div class="stat-card glass reveal" style="transition-delay: 0.1s">
+        <div class="stat-num">500+</div>
+        <div class="stat-label">Happy Customers Daily</div>
+      </div>
+      <div class="stat-card glass reveal" style="transition-delay: 0.2s">
+        <div class="stat-num">5★</div>
+        <div class="stat-label">Average Rating</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- About -->
+  <section id="about">
+    <div class="about-grid">
+      <div class="about-text reveal">
+        <p class="section-label">Our Story</p>
+        <h2 class="section-title">More Than Coffee —<br><em>It's a Ritual</em></h2>
+        <p>Born from a love of craft and community, Mocha & Co was founded with one simple belief: a great cup of coffee can change your entire day. We source our beans directly from farmers across Ethiopia, Colombia, and Sumatra.</p>
+        <p style="margin-top: 1rem;">Every drink is brewed with intention, every space is designed with warmth. Come as you are — stay as long as you need.</p>
+        <a href="#menu" class="btn-primary" style="display: inline-block; margin-top: 2rem;">View Full Menu</a>
+      </div>
+      <div class="about-visual">
+        <div class="about-card glass reveal">
+          <div class="about-icon">🫘</div>
+          <h4>Direct Sourced Beans</h4>
+          <p>Partnering with farms for traceable, ethical sourcing from harvest to cup.</p>
+        </div>
+        <div class="about-card glass reveal" style="transition-delay: 0.1s">
+          <div class="about-icon">🔥</div>
+          <h4>In-House Roasting</h4>
+          <p>Small-batch roasted fresh weekly to bring out each bean's full character.</p>
+        </div>
+        <div class="about-card glass reveal" style="transition-delay: 0.2s">
+          <div class="about-icon">🧋</div>
+          <h4>Artisan Recipes</h4>
+          <p>Original seasonal drinks crafted by our baristas who train and innovate daily.</p>
+        </div>
+        <div class="about-card glass reveal" style="transition-delay: 0.3s">
+          <div class="about-icon">🌿</div>
+          <h4>Eco Conscious</h4>
+          <p>Compostable cups, zero-waste program, and sustainable packaging throughout.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- Menu -->
+  <section id="menu" style="text-align: center;">
+    <p class="section-label reveal">Our Favourites</p>
+    <h2 class="section-title reveal">A Cup for <em>Every Mood</em></h2>
+    <div class="menu-grid">
+      <div class="menu-card glass reveal">
+        <span class="menu-emoji">☕</span>
+        <div class="menu-tag">Bestseller</div>
+        <h3>Signature Mocha</h3>
+        <p>Double shot espresso, dark chocolate, steamed whole milk, and a kiss of sea salt.</p>
+        <div class="menu-price">Rp 38.000</div>
+      </div>
+      <div class="menu-card glass reveal" style="transition-delay: 0.1s">
+        <span class="menu-emoji">🧊</span>
+        <div class="menu-tag">Seasonal</div>
+        <h3>Cold Brew Tonic</h3>
+        <p>18-hour cold brew poured over tonic water with orange zest and fresh mint.</p>
+        <div class="menu-price">Rp 42.000</div>
+      </div>
+      <div class="menu-card glass reveal" style="transition-delay: 0.2s">
+        <span class="menu-emoji">🍵</span>
+        <div class="menu-tag">Vegan Friendly</div>
+        <h3>Oat Matcha Latte</h3>
+        <p>Ceremonial grade matcha, creamy oat milk, a hint of vanilla and honey.</p>
+        <div class="menu-price">Rp 40.000</div>
+      </div>
+      <div class="menu-card glass reveal" style="transition-delay: 0.3s">
+        <span class="menu-emoji">🍯</span>
+        <div class="menu-tag">New</div>
+        <h3>Honey Caramel Flat</h3>
+        <p>Velvety flat white drizzled with wild honey caramel over Ethiopian single origin.</p>
+        <div class="menu-price">Rp 45.000</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- Testimonials -->
+  <section style="text-align: center;">
+    <p class="section-label reveal">What People Say</p>
+    <h2 class="section-title reveal">Loved by the <em>Community</em></h2>
+    <div class="testi-grid">
+      <div class="testi-card glass reveal">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-quote">"The atmosphere here is unmatched. I come every morning just to feel that warmth — and the mocha is absolutely perfection."</p>
+        <div class="testi-author">
+          <div class="testi-avatar">AR</div>
+          <div>
+            <div class="testi-name">Ari Ramadhan</div>
+            <div class="testi-role">Regular since 2021</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card glass reveal" style="transition-delay: 0.1s">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-quote">"Best cold brew I've found in this city. The beans are clearly something special — you can taste the care in every sip."</p>
+        <div class="testi-author">
+          <div class="testi-avatar">DP</div>
+          <div>
+            <div class="testi-name">Dita Putri</div>
+            <div class="testi-role">Food blogger</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card glass reveal" style="transition-delay: 0.2s">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-quote">"I've worked from here twice a week for a year now. Fast wifi, excellent coffee, and staff that actually remember your name."</p>
+        <div class="testi-author">
+          <div class="testi-avatar">RH</div>
+          <div>
+            <div class="testi-name">Rizky Hermawan</div>
+            <div class="testi-role">Freelance designer</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- Hours -->
+  <section id="hours" style="text-align: center;">
+    <p class="section-label reveal">We're Open</p>
+    <h2 class="section-title reveal">Come Visit <em>Anytime</em></h2>
+    <div class="hours-grid">
+      <div class="hour-card glass reveal">
+        <div class="hour-day">Monday – Friday</div>
+        <div class="hour-time">07:00 – 22:00</div>
+      </div>
+      <div class="hour-card glass reveal" style="transition-delay: 0.1s">
+        <div class="hour-day">Saturday</div>
+        <div class="hour-time">08:00 – 23:00</div>
+      </div>
+      <div class="hour-card glass reveal" style="transition-delay: 0.2s">
+        <div class="hour-day">Sunday</div>
+        <div class="hour-time">09:00 – 21:00</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section id="contact" style="text-align: center; padding-top: 2rem;">
+    <div class="cta-box glass reveal">
+      <p class="section-label">Find Us</p>
+      <h2 class="section-title">Let's Grab a Cup <em>Together</em></h2>
+      <p>Jl. Wahid Hasyim No. 27, Pekalongan · @mochaandco · hello@mochaandco.id</p>
+      <div class="cta-actions">
+        <a href="#" class="btn-primary">Reserve a Table</a>
+        <a href="#" class="btn-secondary">Get Directions</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-logo">Mocha <span>&</span> Co</div>
+    <div class="footer-links">
+      <a href="#">Instagram</a>
+      <a href="#">WhatsApp</a>
+      <a href="#">TikTok</a>
+      <a href="#">Tokopedia</a>
+    </div>
+    <div>© 2025 Mocha & Co. All rights reserved.</div>
+  </footer>
+
+</div>
+
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        setTimeout(() => e.target.classList.add('visible'), 60);
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
